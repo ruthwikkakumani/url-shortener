@@ -10,9 +10,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/ruthwikkakumani/url-shortener/pkg/logger"
 	"github.com/ruthwikkakumani/url-shortener/services/auth-service/internal/config"
+	"github.com/ruthwikkakumani/url-shortener/services/auth-service/internal/db"
 	"github.com/ruthwikkakumani/url-shortener/services/auth-service/internal/middleware"
 	"github.com/ruthwikkakumani/url-shortener/services/auth-service/internal/routes"
 	"go.uber.org/zap"
@@ -27,14 +29,14 @@ func LoadEnv() {
 }
 
 // setup server
-func newServer(logger *zap.Logger) (*gin.Engine) {
+func newServer(logger *zap.Logger, pool *pgxpool.Pool) (*gin.Engine) {
 	server := gin.New()
 	
 	server.Use(gin.Recovery())
 	
 	server.Use(middleware.ZapMiddleware(logger))
 	
-	routes.RegisterRoutes(server ,logger)
+	routes.RegisterRoutes(server ,logger, pool)
 	
 	return server
 }
@@ -97,8 +99,23 @@ func main(){
 	}
 	defer logger.Sync()
 	
+	dbService := db.NewDB(logger)
+	if err := dbService.InitDB(context.Background()); err != nil {
+		logger.Fatal("failed to initialize db",
+			zap.Error(err),
+		)
+	}
+	defer dbService.Close()
+	
+	pool, err := dbService.GetPool()
+	if err != nil {
+		logger.Error("db not initialized",
+			zap.Error(err),
+		)
+	}
+	
 	// setup server
-	server := newServer(logger)
+	server := newServer(logger, pool)
 	
 	// run server
 	startServer(server, logger)
