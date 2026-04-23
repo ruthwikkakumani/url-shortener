@@ -26,4 +26,5 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger , db *pgxpool.Pool) {
 	
 	// Public redirect route
 	r.GET("/r/:code", urlHandler.RedirectURL)
+
 }
