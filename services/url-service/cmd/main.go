@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+<<<<<<< HEAD
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/ruthwikkakumani/url-shortener/pkg/logger"
@@ -17,6 +18,12 @@ import (
 	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/db"
 	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/middleware"
 	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/routes"
+=======
+	"github.com/joho/godotenv"
+	"github.com/ruthwikkakumani/url-shortener/pkg/logger"
+	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/config"
+	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/middleware"
+>>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
 	"go.uber.org/zap"
 )
 
@@ -27,15 +34,22 @@ func LoadEnv() {
 	}
 }
 
+<<<<<<< HEAD
 func newServer(logger *zap.Logger, pool *pgxpool.Pool) (*gin.Engine){
+=======
+func newServer(logger *zap.Logger) (*gin.Engine){
+>>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
 	server := gin.New()
 	
 	server.Use(gin.Recovery())
 	
 	server.Use(middleware.ZapMiddleware(logger))
 	
+<<<<<<< HEAD
 	routes.RegisterRoutes(server ,logger, pool)
 	
+=======
+>>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
 	return server
 }
 
@@ -55,10 +69,17 @@ func startServer(server *gin.Engine, logger *zap.Logger) {
 			zap.String("port", port),
 		)
 		
+<<<<<<< HEAD
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		    logger.Error("server failed to start",
 		        zap.Error(err),
 		    )
+=======
+		if err := srv.ListenAndServe(); err != nil {
+			logger.Error("server failed to start",
+				zap.Error(err),
+			)
+>>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
 		}
 	}()
 	
@@ -93,6 +114,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+<<<<<<< HEAD
 	defer func() {
 		_ = logger.Sync()
 	}()
@@ -114,6 +136,12 @@ func main() {
 	
 	// server setup
 	server := newServer(logger, pool)
+=======
+	defer logger.Sync()
+	
+	// server setup
+	server := newServer(logger)
+>>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
 	
 	// start server
 	startServer(server, logger)
