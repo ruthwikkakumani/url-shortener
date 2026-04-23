@@ -27,7 +27,7 @@ func LoadEnv() {
 	}
 }
 
-func newServer(logger *zap.Logger, pool *pgxpool.Pool) *gin.Engine {
+func newServer(logger *zap.Logger, pool *pgxpool.Pool) (*gin.Engine){
 	server := gin.New()
 
 	server.Use(gin.Recovery())
@@ -104,7 +104,7 @@ func main() {
 		)
 	}
 	defer dbService.Close()
-
+	
 	pool, err := dbService.GetPool()
 	if err != nil {
 		logger.Error("db not initialized",
