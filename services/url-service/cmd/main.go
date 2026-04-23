@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-<<<<<<< HEAD
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/ruthwikkakumani/url-shortener/pkg/logger"
@@ -18,12 +17,6 @@ import (
 	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/db"
 	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/middleware"
 	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/routes"
-=======
-	"github.com/joho/godotenv"
-	"github.com/ruthwikkakumani/url-shortener/pkg/logger"
-	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/config"
-	"github.com/ruthwikkakumani/url-shortener/services/url-service/internal/middleware"
->>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
 	"go.uber.org/zap"
 )
 
@@ -34,91 +27,76 @@ func LoadEnv() {
 	}
 }
 
-<<<<<<< HEAD
-func newServer(logger *zap.Logger, pool *pgxpool.Pool) (*gin.Engine){
-=======
-func newServer(logger *zap.Logger) (*gin.Engine){
->>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
+func newServer(logger *zap.Logger, pool *pgxpool.Pool) *gin.Engine {
 	server := gin.New()
-	
+
 	server.Use(gin.Recovery())
-	
 	server.Use(middleware.ZapMiddleware(logger))
-	
-<<<<<<< HEAD
-	routes.RegisterRoutes(server ,logger, pool)
-	
-=======
->>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
+
+	routes.RegisterRoutes(server, logger, pool)
+
 	return server
 }
 
 func startServer(server *gin.Engine, logger *zap.Logger) {
 	port := config.GetEnv("PORT", "8082")
-	
+
 	srv := &http.Server{
-		Addr: ":" + port,
-		Handler: server,
-		ReadTimeout: 10 * time.Second,
+		Addr:         ":" + port,
+		Handler:      server,
+		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		IdleTimeout: 10 * time.Second,
+		IdleTimeout:  10 * time.Second,
 	}
-	
+
 	go func() {
-		logger.Info("Server starting", 
+		logger.Info("Server starting",
 			zap.String("port", port),
 		)
-		
-<<<<<<< HEAD
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		    logger.Error("server failed to start",
-		        zap.Error(err),
-		    )
-=======
-		if err := srv.ListenAndServe(); err != nil {
 			logger.Error("server failed to start",
 				zap.Error(err),
 			)
->>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
 		}
 	}()
-	
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	
+
 	<-quit
-	
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	logger.Info("shutting down server....")
-	
+
 	if err := srv.Shutdown(ctx); err != nil {
-		logger.Error("forced Shutdown", 
+		logger.Error("forced Shutdown",
 			zap.Error(err),
 		)
 	}
-	
+
 	logger.Info("server exited cleanly")
 }
 
 func main() {
-	
+
 	// Load env
 	LoadEnv()
-	
+
 	env := config.GetEnv("ENV", "development")
-	
+
 	// Initialize Logger
 	logger, err := logger.InitLogger(env)
 	if err != nil {
 		panic(err)
 	}
-<<<<<<< HEAD
+
 	defer func() {
 		_ = logger.Sync()
 	}()
-	
+
 	dbService := db.NewDB(logger)
 	if err := dbService.InitDB(context.Background()); err != nil {
 		logger.Fatal("failed to initialize db",
@@ -126,23 +104,17 @@ func main() {
 		)
 	}
 	defer dbService.Close()
-	
+
 	pool, err := dbService.GetPool()
 	if err != nil {
 		logger.Error("db not initialized",
 			zap.Error(err),
 		)
 	}
-	
+
 	// server setup
 	server := newServer(logger, pool)
-=======
-	defer logger.Sync()
-	
-	// server setup
-	server := newServer(logger)
->>>>>>> abb5fc8 (feat(url-service): setup server, config, and logging middleware)
-	
+
 	// start server
 	startServer(server, logger)
 }
