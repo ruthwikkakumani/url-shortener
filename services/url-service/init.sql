@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS urls (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    original_url TEXT NOT NULL,
+    short_code VARCHAR(10) UNIQUE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
