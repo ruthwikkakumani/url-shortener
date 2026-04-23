@@ -104,7 +104,7 @@ func main() {
 		)
 	}
 	defer dbService.Close()
-	
+
 	pool, err := dbService.GetPool()
 	if err != nil {
 		logger.Error("db not initialized",
