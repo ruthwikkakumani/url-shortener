@@ -50,10 +50,10 @@ func startServer(server *gin.Engine, logger *zap.Logger) {
 			zap.String("port", port),
 		)
 		
-		if err := srv.ListenAndServe(); err != nil {
-			logger.Error("server failed to start",
-				zap.Error(err),
-			)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		    logger.Error("server failed to start",
+		        zap.Error(err),
+		    )
 		}
 	}()
 	
@@ -88,7 +88,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync()
+	}()
 	
 	// server setup
 	server := newServer(logger)
