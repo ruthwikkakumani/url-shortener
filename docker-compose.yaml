@@ -29,6 +29,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - DB_CONN=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-auth_service_db}?sslmode=disable
       - BASE_URL=${BASE_URL:-http://localhost:8082}
+
     depends_on:
       postgres:
         condition: service_healthy
