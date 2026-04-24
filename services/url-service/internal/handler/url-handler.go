@@ -76,7 +76,7 @@ func (h *UrlHandler) ShortenURL(c *gin.Context){
 	base := config.GetEnv("BASE_URL", "http://localhost:8082")
 	
 	c.JSON(http.StatusOK, gin.H{
-		"short_url": base + "/" + code,
+		"short_url": base + "/r/" + code,
 	})
 
 } 
