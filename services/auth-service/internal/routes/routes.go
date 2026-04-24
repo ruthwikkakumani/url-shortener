@@ -15,7 +15,6 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger, pool *pgxpool.Pool) {
 	authService := service.NewAuthService(logger, userRepo)
 	authHandler := handler.NewAuthHandler(logger, authService)
 	
-	r.POST("/api/register", authHandler.RegisterHandler)
-	
-	r.POST("/api/login", authHandler.LoginHandler)
+	r.POST("/register", authHandler.RegisterHandler)
+	r.POST("/login", authHandler.LoginHandler)
 }

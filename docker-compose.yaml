@@ -5,10 +5,10 @@ services:
       dockerfile: services/auth-service/Dockerfile
     container_name: auth-service
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
       - ENV=${ENV:-development}
-      - PORT=${PORT:-8080}
+      - PORT=${PORT:-8081}
       - JWT_SECRET=${JWT_SECRET}
       - DB_CONN_STRING_AUTH_SERVICE=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-auth_service_db}?sslmode=disable
     depends_on:
