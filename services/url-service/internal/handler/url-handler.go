@@ -77,7 +77,6 @@ func (h *UrlHandler) ShortenURL(c *gin.Context){
 	
 	c.JSON(http.StatusOK, gin.H{
 		"short_url": base + "/r/" + code,
-
 	})
 
 } 
