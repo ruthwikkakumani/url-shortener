@@ -13,16 +13,17 @@ import (
 func RegisterRoutes(r *gin.Engine, logger *zap.Logger , db *pgxpool.Pool) {
 	
 	repo := repository.NewUrlRepo(logger, db)
-	service := service.NewUrlService(logger, repo)
-	urlHandler := handler.NewUrlHandler(logger, service)
+	urlService := service.NewUrlService(logger, repo)
+	urlHandler := handler.NewUrlHandler(logger, urlService)
 	
-	// Protected group
-	authRoutes := r.Group("/")
-	authRoutes.Use(middleware.AuthMiddleware())
+	// Protected routes 
+	urls := r.Group("/urls")
+	protected := urls.Group("")
+	protected.Use(middleware.AuthMiddleware())
 	
 	// Shorten Original URL 
-	authRoutes.POST("/api/v1/urls", urlHandler.ShortenURL)
+	protected.POST("", urlHandler.ShortenURL)
 	
-	// Redirect Short URL
-	r.GET("/:code", urlHandler.RedirectURL)
+	// Public redirect route
+	r.GET("/r/:code", urlHandler.RedirectURL)
 }
