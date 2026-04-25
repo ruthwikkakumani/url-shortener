@@ -29,74 +29,74 @@ func LoadEnv() {
 
 func newServer(logger *zap.Logger, pool *pgxpool.Pool) (*gin.Engine){
 	server := gin.New()
-	
+
 	server.Use(gin.Recovery())
-	
 	server.Use(middleware.ZapMiddleware(logger))
-	
-	routes.RegisterRoutes(server ,logger, pool)
-	
+
+	routes.RegisterRoutes(server, logger, pool)
+
 	return server
 }
 
 func startServer(server *gin.Engine, logger *zap.Logger) {
 	port := config.GetEnv("PORT", "8082")
-	
+
 	srv := &http.Server{
-		Addr: ":" + port,
-		Handler: server,
-		ReadTimeout: 10 * time.Second,
+		Addr:         ":" + port,
+		Handler:      server,
+		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		IdleTimeout: 10 * time.Second,
+		IdleTimeout:  10 * time.Second,
 	}
-	
+
 	go func() {
-		logger.Info("Server starting", 
+		logger.Info("Server starting",
 			zap.String("port", port),
 		)
-		
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		    logger.Error("server failed to start",
-		        zap.Error(err),
-		    )
+			logger.Error("server failed to start",
+				zap.Error(err),
+			)
 		}
 	}()
-	
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-	
+
 	<-quit
-	
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	logger.Info("shutting down server....")
-	
+
 	if err := srv.Shutdown(ctx); err != nil {
-		logger.Error("forced Shutdown", 
+		logger.Error("forced Shutdown",
 			zap.Error(err),
 		)
 	}
-	
+
 	logger.Info("server exited cleanly")
 }
 
 func main() {
-	
+
 	// Load env
 	LoadEnv()
-	
+
 	env := config.GetEnv("ENV", "development")
-	
+
 	// Initialize Logger
 	logger, err := logger.InitLogger(env)
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() {
 		_ = logger.Sync()
 	}()
-	
+
 	dbService := db.NewDB(logger)
 	if err := dbService.InitDB(context.Background()); err != nil {
 		logger.Fatal("failed to initialize db",
@@ -111,10 +111,10 @@ func main() {
 			zap.Error(err),
 		)
 	}
-	
+
 	// server setup
 	server := newServer(logger, pool)
-	
+
 	// start server
 	startServer(server, logger)
 }
