@@ -1,8 +1,6 @@
 services:
   auth-service:
-    build:
-      context: .
-      dockerfile: services/auth-service/Dockerfile
+    image: ruthwikkakumani/auth-service:latest
     env_file:
       - .env
     container_name: auth-service
@@ -12,14 +10,11 @@ services:
       - ENV=${ENV}
       - PORT=${AUTH_PORT}
       - JWT_SECRET=${JWT_SECRET}
-      # - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-auth:5432/${AUTH_DB_NAME}?sslmode=disable
-      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@url-shortener-db.cy7wykyyqtnk.us-east-1.rds.amazonaws.com:5432/${AUTH_DB_NAME}?sslmode=disable
+      - DB_CONN=${DB_CONN_AUTH}
     restart: unless-stopped
 
   url-service:
-    build:
-      context: .
-      dockerfile: services/url-service/Dockerfile
+    image: ruthwikkakumani/url-service:latest
     env_file:
       - .env
     container_name: url-service
@@ -30,6 +25,5 @@ services:
       - PORT=${URL_PORT}
       - JWT_SECRET=${JWT_SECRET}
       - BASE_URL=${BASE_URL}
-      # - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-url:5432/${URL_DB_NAME}?sslmode=disable
-      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@url-shortener-db.cy7wykyyqtnk.us-east-1.rds.amazonaws.com:5432/${URL_DB_NAME}?sslmode=disable
+      - DB_CONN=${DB_CONN_URL}
     restart: unless-stopped
