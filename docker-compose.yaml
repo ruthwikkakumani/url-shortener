@@ -7,12 +7,12 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - ENV=${ENV:-development}
-      - PORT=${PORT:-8081}
+      - ENV=${ENV}
+      - PORT=${AUTH_PORT}
       - JWT_SECRET=${JWT_SECRET}
-      - DB_CONN_STRING_AUTH_SERVICE=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-auth_service_db}?sslmode=disable
+      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-auth:5432/${AUTH_DB_NAME}?sslmode=disable
     depends_on:
-      postgres:
+      postgres-auth:
         condition: service_healthy
     restart: unless-stopped
 
@@ -24,36 +24,54 @@ services:
     ports:
       - "8082:8082"
     environment:
-      - ENV=${ENV:-development}
-      - PORT=${PORT:-8082}
+      - ENV=${ENV}
+      - PORT=${URL_PORT}
       - JWT_SECRET=${JWT_SECRET}
-      - DB_CONN=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-auth_service_db}?sslmode=disable
-      - BASE_URL=${BASE_URL:-http://localhost:8082}
-
+      - BASE_URL=${BASE_URL}
+      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-url:5432/${URL_DB_NAME}?sslmode=disable
     depends_on:
-      postgres:
+      postgres-url:
         condition: service_healthy
     restart: unless-stopped
 
-  postgres:
+  postgres-auth:
     image: postgres:15-alpine
-    container_name: postgres
+    container_name: postgres-auth
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-auth_service_db}
+      - POSTGRES_DB=${AUTH_DB_NAME}
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_auth_data:/var/lib/postgresql/data
       - ./services/auth-service/init.sql:/docker-entrypoint-initdb.d/01-init-auth.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${AUTH_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  postgres-url:
+    image: postgres:15-alpine
+    container_name: postgres-url
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${URL_DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_url_data:/var/lib/postgresql/data
       - ./services/url-service/init.sql:/docker-entrypoint-initdb.d/02-init-url.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_service_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${URL_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  postgres_auth_data:
+  postgres_url_data:
