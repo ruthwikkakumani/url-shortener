@@ -10,10 +10,8 @@ services:
       - ENV=${ENV}
       - PORT=${AUTH_PORT}
       - JWT_SECRET=${JWT_SECRET}
-      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-auth:5432/${AUTH_DB_NAME}?sslmode=disable
-    depends_on:
-      postgres-auth:
-        condition: service_healthy
+      # - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-auth:5432/${AUTH_DB_NAME}?sslmode=disable
+      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@url-shortener-db.cy7wykyyqtnk.us-east-1.rds.amazonaws.com:5432/${AUTH_DB_NAME}?sslmode=disable
     restart: unless-stopped
 
   url-service:
@@ -28,50 +26,6 @@ services:
       - PORT=${URL_PORT}
       - JWT_SECRET=${JWT_SECRET}
       - BASE_URL=${BASE_URL}
-      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-url:5432/${URL_DB_NAME}?sslmode=disable
-    depends_on:
-      postgres-url:
-        condition: service_healthy
+      # - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-url:5432/${URL_DB_NAME}?sslmode=disable
+      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@url-shortener-db.cy7wykyyqtnk.us-east-1.rds.amazonaws.com:5432/${URL_DB_NAME}?sslmode=disable
     restart: unless-stopped
-
-  postgres-auth:
-    image: postgres:15-alpine
-    container_name: postgres-auth
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${AUTH_DB_NAME}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_auth_data:/var/lib/postgresql/data
-      - ./services/auth-service/init.sql:/docker-entrypoint-initdb.d/01-init-auth.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ${AUTH_DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  postgres-url:
-    image: postgres:15-alpine
-    container_name: postgres-url
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${URL_DB_NAME}
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_url_data:/var/lib/postgresql/data
-      - ./services/url-service/init.sql:/docker-entrypoint-initdb.d/02-init-url.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ${URL_DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-volumes:
-  postgres_auth_data:
-  postgres_url_data:
