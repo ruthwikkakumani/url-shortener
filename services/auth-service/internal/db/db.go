@@ -28,11 +28,11 @@ func (db *DBService) InitDB(ctx context.Context) (error) {
 			return nil
 	}
 	
-	dbURL := config.GetEnv("DB_CONN_STRING_AUTH_SERVICE", "")
+	dbURL := config.GetEnv("DB_CONN", "")
 	
 	if dbURL == "" {
 		db.logger.Error("database connection string missing", 
-			zap.String("env", "DB_CONN_STRING_AUTH_SERVICE"),
+			zap.String("env", "DB_CONN"),
 		)
 		return fmt.Errorf("database url is not set")
 	}

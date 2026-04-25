@@ -10,7 +10,7 @@ services:
       - ENV=${ENV}
       - PORT=${AUTH_PORT}
       - JWT_SECRET=${JWT_SECRET}
-      - DB_CONN_STRING=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-auth:5432/${AUTH_DB_NAME}?sslmode=disable
+      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-auth:5432/${AUTH_DB_NAME}?sslmode=disable
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -28,7 +28,7 @@ services:
       - PORT=${URL_PORT}
       - JWT_SECRET=${JWT_SECRET}
       - BASE_URL=${BASE_URL}
-      - DB_CONN_STRING=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-url:5432/${URL_DB_NAME}?sslmode=disable
+      - DB_CONN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-url:5432/${URL_DB_NAME}?sslmode=disable
     depends_on:
       postgres-url:
         condition: service_healthy
