@@ -26,7 +26,7 @@ RUN apk --no-cache add ca-certificates tzdata
 COPY --from=builder /app/auth-service .
 
 # Inform Docker that the container listens on the specified port
-EXPOSE 8080
+EXPOSE 8081
 
 # Command to run the executable
 CMD ["./auth-service"]
