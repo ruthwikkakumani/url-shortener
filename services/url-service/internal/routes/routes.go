@@ -17,7 +17,7 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger , db *pgxpool.Pool) {
 	urlHandler := handler.NewUrlHandler(logger, urlService)
 	
 	// Protected routes 
-	urls := r.Group("/urls")
+	urls := r.Group("/")
 	protected := urls.Group("")
 	protected.Use(middleware.AuthMiddleware())
 	

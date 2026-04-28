@@ -1,11 +1,27 @@
 services:
+  api-gateway:
+    image: ruthwikkakumani/api-gateway:latest
+    container_name: api-gateway
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=${ENV}
+      - PORT=${PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - URL_SERVICE_URL=${URL_SERVICE_URL}
+    depends_on:
+      - auth-service
+      - url-service
+    restart: unless-stopped
+  
   auth-service:
     image: ruthwikkakumani/auth-service:latest
     env_file:
       - .env
     container_name: auth-service
-    ports:
-      - "8081:8081"
     environment:
       - ENV=${ENV}
       - PORT=${AUTH_PORT}
@@ -18,8 +34,6 @@ services:
     env_file:
       - .env
     container_name: url-service
-    ports:
-      - "8082:8082"
     environment:
       - ENV=${ENV}
       - PORT=${URL_PORT}

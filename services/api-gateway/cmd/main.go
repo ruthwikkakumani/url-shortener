@@ -14,6 +14,7 @@ import (
 	"github.com/ruthwikkakumani/url-shortener/pkg/logger"
 	"github.com/ruthwikkakumani/url-shortener/services/api-gateway/internal/config"
 	"github.com/ruthwikkakumani/url-shortener/services/api-gateway/internal/middleware"
+	"github.com/ruthwikkakumani/url-shortener/services/api-gateway/routes"
 	"go.uber.org/zap"
 )
 
@@ -32,6 +33,8 @@ func newServer(logger *zap.Logger) (*gin.Engine){
 	server.Use(gin.Recovery())
 	
 	server.Use(middleware.ZapMiddleware(logger))
+	
+	routes.RegisterRoutes(server, logger)
 	
 	return server
 }
