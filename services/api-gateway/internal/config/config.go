@@ -12,6 +12,7 @@ type Config struct {
 	JWTSecret      string
 	AuthServiceURL string
 	URLServiceURL  string
+	RedirectService string
 	AnalyticsURL   string
 }
 
@@ -21,10 +22,12 @@ func Load(logger *zap.Logger) *Config {
 		JWTSecret:      GetEnv("JWT_SECRET", ""),
 		AuthServiceURL: GetEnv("AUTH_SERVICE_URL", ""),
 		URLServiceURL:  GetEnv("URL_SERVICE_URL", ""),
+		RedirectService: GetEnv("REDIRECT_SERVICE_URL", ""),
 		AnalyticsURL:   GetEnv("ANALYTICS_SERVICE_URL", ""),
 	}
 
 	must(cfg.JWTSecret, "JWT_SECRET", logger)
+	must(cfg.RedirectService, "REDIRECT_SERVICE_URL", logger)
 	must(cfg.AuthServiceURL, "AUTH_SERVICE_URL", logger)
 	must(cfg.URLServiceURL, "URL_SERVICE_URL", logger)
 

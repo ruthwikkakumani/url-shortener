@@ -57,9 +57,11 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger) {
 	
 	authService := cfg.AuthServiceURL
 	urlService := cfg.URLServiceURL
+	redirectService := cfg.RedirectService
 	
 	authProxy := newProxy(authService, logger)
 	urlProxy := newProxy(urlService, logger)
+	redirectProxy := newProxy(redirectService, logger)
 	
 	// Public routes
 	// Login & Register
@@ -69,7 +71,7 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger) {
 	}
 	
 	// Redirects
-	r.GET("/r/:code", proxyHandler(urlProxy, ""))
+	r.GET("/r/:code", proxyHandler(redirectProxy, ""))
 	
 	urls := r.Group("/api/url")
 	urls.Use(middleware.AuthMiddleware())
