@@ -69,20 +69,3 @@ func (h *UrlHandler) ShortenURL(c *gin.Context){
 	})
 
 } 
-
-func (h *UrlHandler) RedirectURL(c *gin.Context) {
-	code := c.Param("code")
-	if code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "short code is required"})
-		return
-	}
-
-	originalURL, err := h.service.GetOriginalURL(code)
-	if err != nil {
-		h.logger.Error("URL not found or expired", zap.String("code", code), zap.Error(err))
-		c.JSON(http.StatusNotFound, gin.H{"error": "url not found or expired"})
-		return
-	}
-
-	c.Redirect(http.StatusFound, originalURL)
-}

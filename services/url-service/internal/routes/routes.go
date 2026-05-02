@@ -22,6 +22,4 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger , db *pgxpool.Pool) {
 	// Shorten Original URL 
 	protected.POST("", urlHandler.ShortenURL)
 	
-	// Public redirect route
-	r.GET("/r/:code", urlHandler.RedirectURL)
 }

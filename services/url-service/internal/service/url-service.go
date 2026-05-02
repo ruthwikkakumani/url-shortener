@@ -68,11 +68,3 @@ func (s *UrlService) generateUniqueShortCode() (string, error) {
 	}
 }
 
-func (s *UrlService) GetOriginalURL(code string) (string, error) {
-	url, err := s.repo.GetOriginalURL(code)
-	if err != nil {
-		s.logger.Error("failed to get original url", zap.String("code", code), zap.Error(err))
-		return "", err
-	}
-	return url, nil
-}
