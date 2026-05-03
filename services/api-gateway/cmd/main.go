@@ -14,7 +14,7 @@ import (
 	"github.com/ruthwikkakumani/url-shortener/pkg/logger"
 	"github.com/ruthwikkakumani/url-shortener/services/api-gateway/internal/config"
 	"github.com/ruthwikkakumani/url-shortener/services/api-gateway/internal/middleware"
-	"github.com/ruthwikkakumani/url-shortener/services/api-gateway/routes"
+	"github.com/ruthwikkakumani/url-shortener/services/api-gateway/internal/routes"
 	"go.uber.org/zap"
 )
 
