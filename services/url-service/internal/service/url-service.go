@@ -68,3 +68,21 @@ func (s *UrlService) generateUniqueShortCode() (string, error) {
 	}
 }
 
+func (s *UrlService) UpdateOriginalURL(userId string, originalURL *string, code string, expiryMinutes *int) (string, error) {
+	
+	var expiresAt *time.Time
+	if expiryMinutes != nil {
+		t := time.Now().Add(time.Duration(*expiryMinutes) * time.Minute)
+		expiresAt = &t
+	}
+
+	if err := s.repo.UpdateURL(userId, originalURL, code, expiresAt); err != nil {
+		s.logger.Error("unable to update data in db",
+			zap.Error(err),
+		)
+
+		return "", err
+	}
+
+	return code, nil
+}

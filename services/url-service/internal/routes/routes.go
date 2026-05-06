@@ -21,5 +21,8 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger , db *pgxpool.Pool) {
 	
 	// Shorten Original URL 
 	protected.POST("", urlHandler.ShortenURL)
+
+	// Update shorten URL
+	protected.PATCH("/:shortCode", urlHandler.UpdateURL)
 	
 }
