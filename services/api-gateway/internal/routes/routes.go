@@ -52,31 +52,38 @@ func proxyHandler(proxy *httputil.ReverseProxy, prefix string) gin.HandlerFunc {
 }
 
 func RegisterRoutes(r *gin.Engine, logger *zap.Logger) {
-	
+
 	cfg := config.Load(logger)
-	
+
 	authService := cfg.AuthServiceURL
 	urlService := cfg.URLServiceURL
 	redirectService := cfg.RedirectService
-	
+	analyticsService := cfg.AnalyticsURL
+
 	authProxy := newProxy(authService, logger)
 	urlProxy := newProxy(urlService, logger)
 	redirectProxy := newProxy(redirectService, logger)
-	
-	// Public routes
-	// Login & Register
+
 	auth := r.Group("/api/auth")
 	{
 		auth.Any("/*path", proxyHandler(authProxy, "/api/auth"))
 	}
-	
-	// Redirects
+
 	r.GET("/r/:code", proxyHandler(redirectProxy, ""))
-	
+
 	urls := r.Group("/api/url")
 	urls.Use(middleware.AuthMiddleware())
 	{
 		urls.Any("", proxyHandler(urlProxy, "/api/url"))
 		urls.Any("/*path", proxyHandler(urlProxy, "/api/url"))
+	}
+
+	if analyticsService != "" {
+		analyticsProxy := newProxy(analyticsService, logger)
+		analytics := r.Group("/api/analytics")
+		analytics.Use(middleware.AuthMiddleware())
+		{
+			analytics.Any("/*path", proxyHandler(analyticsProxy, "/api/analytics"))
+		}
 	}
 }
