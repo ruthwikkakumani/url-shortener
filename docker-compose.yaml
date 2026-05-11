@@ -1,4 +1,31 @@
 services:
+
+  # ── Infrastructure ─────────────────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    restart: unless-stopped
+
+  # ── Application Services ───────────────────────────────────────────────────
   api-gateway:
     image: ruthwikkakumani/api-gateway:latest
     container_name: api-gateway
@@ -12,16 +39,20 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
       - URL_SERVICE_URL=${URL_SERVICE_URL}
+      - REDIRECT_SERVICE_URL=${REDIRECT_SERVICE_URL}
+      - ANALYTICS_SERVICE_URL=${ANALYTICS_SERVICE_URL}
     depends_on:
       - auth-service
       - url-service
+      - redirect-service
+      - analytics-service
     restart: unless-stopped
-  
+
   auth-service:
     image: ruthwikkakumani/auth-service:latest
+    container_name: auth-service
     env_file:
       - .env
-    container_name: auth-service
     environment:
       - ENV=${ENV}
       - PORT=${AUTH_PORT}
@@ -31,13 +62,42 @@ services:
 
   url-service:
     image: ruthwikkakumani/url-service:latest
+    container_name: url-service
     env_file:
       - .env
-    container_name: url-service
     environment:
       - ENV=${ENV}
       - PORT=${URL_PORT}
       - JWT_SECRET=${JWT_SECRET}
       - BASE_URL=${BASE_URL}
       - DB_CONN=${DB_CONN_URL}
+    restart: unless-stopped
+
+  redirect-service:
+    image: ruthwikkakumani/redirect-service:latest
+    container_name: redirect-service
+    env_file:
+      - .env
+    environment:
+      - ENV=${ENV}
+      - PORT=${REDIRECT_PORT}
+      - DB_CONN=${DB_CONN_URL}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - KAFKA_BROKERS=kafka:9092
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+  analytics-service:
+    image: ruthwikkakumani/analytics-service:latest
+    container_name: analytics-service
+    env_file:
+      - .env
+    environment:
+      - ENV=${ENV}
+      - PORT=${ANALYTICS_PORT}
+      - DB_CONN=${DB_CONN_ANALYTICS}
+      - KAFKA_BROKERS=kafka:9092
+    depends_on:
+      - kafka
     restart: unless-stopped
