@@ -10,18 +10,18 @@ import (
 	"go.uber.org/zap"
 )
 
-func RegisterRoutes(r *gin.Engine, logger *zap.Logger , db *pgxpool.Pool) {
-	
+func RegisterRoutes(r *gin.Engine, logger *zap.Logger, db *pgxpool.Pool) {
+
 	repo := repository.NewUrlRepo(logger, db)
 	urlService := service.NewUrlService(logger, repo)
 	urlHandler := handler.NewUrlHandler(logger, urlService)
-	
-	// Protected routes 
+
+	// Protected routes
 	urls := r.Group("/")
 	protected := urls.Group("")
 	protected.Use(middleware.AuthMiddleware())
-	
-	// Shorten Original URL 
+
+	// Shorten Original URL
 	protected.POST("", urlHandler.ShortenURL)
 
 	// List registered urls
@@ -32,5 +32,5 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger , db *pgxpool.Pool) {
 
 	// Delete URL
 	protected.DELETE("/:shortCode", urlHandler.DeleteURL)
-	
+
 }

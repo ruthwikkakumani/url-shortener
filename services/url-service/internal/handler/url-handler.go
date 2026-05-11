@@ -24,7 +24,6 @@ type UpdateURLRequest struct {
 	ExpiryMinutes *int    `json:"expiry_minutes" binding:"omitempty,gte=1,lte=10080"`
 }
 
-// URL initializer
 func NewUrlHandler(logger *zap.Logger, service *service.UrlService) *UrlHandler {
 	return &UrlHandler{
 		logger:  logger,
