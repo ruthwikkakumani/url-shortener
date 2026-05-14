@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/ruthwikkakumani/redirection-engine/pkg/logger"
+	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/cache"
 	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/config"
 	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/db"
 	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/middleware"
@@ -27,13 +28,13 @@ func LoadEnv() {
 	}
 }
 
-func newServer(logger *zap.Logger, pool *pgxpool.Pool) *gin.Engine {
+func newServer(logger *zap.Logger, pool *pgxpool.Pool, cache *cache.RedisClient) *gin.Engine {
 	server := gin.New()
 
 	server.Use(gin.Recovery())
 	server.Use(middleware.ZapMiddleware(logger))
 
-	routes.RegisterRoutes(server, logger, pool)
+	routes.RegisterRoutes(server, logger, pool, cache)
 
 	return server
 }
@@ -112,8 +113,17 @@ func main() {
 		)
 	}
 
+	// Initialize Redis
+	redisClient := cache.NewRedisClient(logger)
+	if err := redisClient.Init(context.Background()); err != nil {
+		logger.Warn("failed to initialize redis, proceeding without cache",
+			zap.Error(err),
+		)
+	}
+	defer redisClient.Close()
+
 	// server setup
-	server := newServer(logger, pool)
+	server := newServer(logger, pool, redisClient)
 
 	// start server
 	startServer(server, logger)

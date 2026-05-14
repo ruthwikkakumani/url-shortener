@@ -82,6 +82,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - BASE_URL=${BASE_URL}
       - DB_CONN=${DB_CONN_URL}
+      - REDIS_ADDR=${REDIS_ADDR}
     restart: unless-stopped
 
   redirect-service:

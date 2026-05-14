@@ -3,21 +3,25 @@ package service
 import (
 	"time"
 
+	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/cache"
 	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/model"
 	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/repository"
 	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/utils"
 	"go.uber.org/zap"
+	"context"
 )
 
 type UrlService struct {
 	logger *zap.Logger
 	repo   *repository.UrlRepo
+	cache  *cache.RedisClient
 }
 
-func NewUrlService(logger *zap.Logger, repo *repository.UrlRepo) *UrlService {
+func NewUrlService(logger *zap.Logger, repo *repository.UrlRepo, cache *cache.RedisClient) *UrlService {
 	return &UrlService{
 		logger: logger,
 		repo:   repo,
+		cache:  cache,
 	}
 }
 
@@ -129,6 +133,16 @@ func (s *UrlService) UpdateURL(userId string, originalURL *string, code string, 
 		return "", err
 	}
 
+	// Invalidate cache
+	if client, err := s.cache.GetClient(); err == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		client.Del(ctx, "url:"+code)
+		if finalCode != code {
+			client.Del(ctx, "url:"+finalCode)
+		}
+	}
+
 	return finalCode, nil
 }
 
@@ -140,6 +154,14 @@ func (s *UrlService) DeleteURL(userId string, shortCode string) error {
 		)
 
 		return err
+	}
+
+	// Invalidate cache
+	if client, err := s.cache.GetClient(); err == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		client.Del(ctx, "url:"+shortCode)
+		s.logger.Info("invalidated cache for deleted url", zap.String("code", shortCode))
 	}
 
 	return nil
