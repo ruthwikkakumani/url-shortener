@@ -23,6 +23,14 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    restart: unless-stopped
+
   api-gateway:
     image: ruthwikkakumani/api-gateway:latest
     container_name: api-gateway
@@ -83,6 +91,8 @@ services:
       - BASE_URL=${BASE_URL}
       - DB_CONN=${DB_CONN_URL}
       - REDIS_ADDR=${REDIS_ADDR}
+    depends_on:
+      - redis
     restart: unless-stopped
 
   redirect-service:
@@ -98,6 +108,7 @@ services:
       - KAFKA_BROKERS=kafka:9092
     depends_on:
       - kafka
+      - redis
     restart: unless-stopped
 
   analytics-service:

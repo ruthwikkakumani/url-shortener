@@ -53,3 +53,13 @@ func (r *UserRepo) GetUserByEmail(email string) (*model.User, error) {
 	
 	return &user, nil
 }
+
+func (r *UserRepo) UpdatePassword(email, hashedPassword string) error {
+	query := `
+		UPDATE users
+		SET password = $1
+		WHERE email = $2
+	`
+	_, err := r.db.Exec(context.Background(), query, hashedPassword, email)
+	return err
+}

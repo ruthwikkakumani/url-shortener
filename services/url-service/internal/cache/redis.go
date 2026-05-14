@@ -15,27 +15,28 @@ type RedisClient struct {
 	client *redis.Client
 }
 
-func NewRedisClient(logger *zap.Logger) *RedisClient {
+func NewRedisClient(logger *zap.Logger) (*RedisClient) {
 	return &RedisClient{
 		logger: logger,
 	}
 }
 
-func (r *RedisClient) Init(ctx context.Context) error {
+func (r *RedisClient) Init(ctx context.Context) (error) {
 	if r.client != nil {
 		r.logger.Warn("Redis already initialized")
 		return nil
 	}
 
-	addr := config.GetEnv("REDIS_ADDR", "")
-	if addr == "" {
-		host := config.GetEnv("REDIS_HOST", "localhost")
-		port := config.GetEnv("REDIS_PORT", "6379")
-		addr = fmt.Sprintf("%s:%s", host, port)
-	}
-
+	host := config.GetEnv("REDIS_HOST", "")
+	port := config.GetEnv("REDIS_PORT", "")
 	password := config.GetEnv("REDIS_PASSWORD", "")
 	username := config.GetEnv("REDIS_USER", "")
+
+	if host == "" || port == "" {
+		return fmt.Errorf("REDIS_HOST or REDIS_PORT not set")
+	}
+
+	addr := fmt.Sprintf("%s:%s", host, port)
 
 	opt := &redis.Options{
 		Addr:            addr,
@@ -53,7 +54,7 @@ func (r *RedisClient) Init(ctx context.Context) error {
 
 	client := redis.NewClient(opt)
 
-	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	pingCtx, cancel := context.WithTimeout(ctx, 5 * time.Second)
 	defer cancel()
 
 	if err := client.Ping(pingCtx).Err(); err != nil {

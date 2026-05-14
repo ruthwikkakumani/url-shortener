@@ -17,4 +17,6 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger, pool *pgxpool.Pool) {
 	
 	r.POST("/register", authHandler.RegisterHandler)
 	r.POST("/login", authHandler.LoginHandler)
+	r.POST("/forgot-password", authHandler.ForgotPasswordHandler)
+	r.POST("/reset-password", authHandler.ResetPasswordHandler)
 }

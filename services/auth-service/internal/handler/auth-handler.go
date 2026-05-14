@@ -25,6 +25,16 @@ type loginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type forgotPasswordReq struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type resetPasswordReq struct {
+	Email       string `json:"email" binding:"required,email"`
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
 func NewAuthHandler(logger *zap.Logger, authService *service.AuthService) (*AuthHandler) {
 	return &AuthHandler{
 		logger: logger,
@@ -119,5 +129,38 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 		"message": "login successful",
 		"token":   token,
 	})
-	
+}
+
+// Forgot Password Handler
+func (h *AuthHandler) ForgotPasswordHandler(c *gin.Context) {
+	var req forgotPasswordReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email"})
+		return
+	}
+
+	if err := h.authService.RequestPasswordReset(req.Email); err != nil {
+		h.logger.Error("failed to request password reset", zap.String("email", req.Email), zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process request"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "If the email exists, a reset token has been generated"})
+}
+
+// Reset Password Handler
+func (h *AuthHandler) ResetPasswordHandler(c *gin.Context) {
+	var req resetPasswordReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.authService.ResetPassword(req.Email, req.Token, req.NewPassword); err != nil {
+		h.logger.Warn("failed to reset password", zap.String("email", req.Email), zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "password reset successful"})
 }
