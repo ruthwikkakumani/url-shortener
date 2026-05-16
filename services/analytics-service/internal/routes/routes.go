@@ -3,21 +3,21 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/ruthwikkakumani/redirection-engine/services/analytics-service/docs"
 	"github.com/ruthwikkakumani/redirection-engine/services/analytics-service/internal/config"
 	"github.com/ruthwikkakumani/redirection-engine/services/analytics-service/internal/handler"
 	"github.com/ruthwikkakumani/redirection-engine/services/analytics-service/internal/repository"
 	"github.com/ruthwikkakumani/redirection-engine/services/analytics-service/internal/service"
-	"go.uber.org/zap"
-	_ "github.com/ruthwikkakumani/redirection-engine/services/analytics-service/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.uber.org/zap"
 )
 
 func RegisterRoutes(r *gin.Engine, logger *zap.Logger, pool *pgxpool.Pool) {
 	repo := repository.NewAnalyticsRepo(pool, logger)
 	svc := service.NewAnalyticsService(repo, logger)
 	h := handler.NewAnalyticsHandler(svc, logger)
-	
+
 	// Swagger documentation - Only exposed in non-production environments
 	if config.GetEnv("ENV", "development") != "production" {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/ruthwikkakumani/redirection-engine/services/api-gateway/docs"
 	"github.com/ruthwikkakumani/redirection-engine/services/api-gateway/internal/config"
 	"github.com/ruthwikkakumani/redirection-engine/services/api-gateway/internal/middleware"
-	"go.uber.org/zap"
-	_ "github.com/ruthwikkakumani/redirection-engine/services/api-gateway/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.uber.org/zap"
 )
 
 func newProxy(target string, logger *zap.Logger) *httputil.ReverseProxy {
@@ -36,7 +36,7 @@ func proxyHandler(proxy *httputil.ReverseProxy, prefix string) gin.HandlerFunc {
 		if userID != "" {
 			c.Request.Header.Set("X-User-ID", userID)
 		}
-		
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader != "" {
 			c.Request.Header.Set("Authorization", authHeader)
@@ -67,7 +67,7 @@ func RegisterRoutes(r *gin.Engine, logger *zap.Logger) {
 	urlService := cfg.URLServiceURL
 	redirectService := cfg.RedirectService
 	analyticsService := cfg.AnalyticsURL
-	
+
 	authProxy := newProxy(authService, logger)
 	urlProxy := newProxy(urlService, logger)
 	redirectProxy := newProxy(redirectService, logger)
