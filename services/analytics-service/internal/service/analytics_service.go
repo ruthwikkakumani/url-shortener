@@ -6,6 +6,7 @@ import (
 
 	"github.com/ruthwikkakumani/redirection-engine/services/analytics-service/internal/repository"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 type AnalyticsService struct {
@@ -17,17 +18,30 @@ func NewAnalyticsService(repo *repository.AnalyticsRepo, logger *zap.Logger) *An
 	return &AnalyticsService{repo: repo, logger: logger}
 }
 
-// Summary returns total clicks and unique visitors for a short code.
 func (s *AnalyticsService) Summary(ctx context.Context, code string) (map[string]any, error) {
-	total, err := s.repo.TotalClicks(ctx, code)
-	if err != nil {
-		s.logger.Error("summary: total clicks query failed", zap.String("code", code), zap.Error(err))
-		return nil, err
-	}
+	g, gCtx := errgroup.WithContext(ctx)
 
-	unique, err := s.repo.UniqueIPs(ctx, code)
-	if err != nil {
-		s.logger.Error("summary: unique ips query failed", zap.String("code", code), zap.Error(err))
+	var total, unique int64
+
+	g.Go(func() error {
+		var err error
+		total, err = s.repo.TotalClicks(gCtx, code)
+		if err != nil {
+			s.logger.Error("summary: total clicks query failed", zap.String("code", code), zap.Error(err))
+		}
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		unique, err = s.repo.UniqueIPs(gCtx, code)
+		if err != nil {
+			s.logger.Error("summary: unique ips query failed", zap.String("code", code), zap.Error(err))
+		}
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -38,14 +52,13 @@ func (s *AnalyticsService) Summary(ctx context.Context, code string) (map[string
 	}, nil
 }
 
-// OverTime returns hourly or daily time-series based on the interval param.
 func (s *AnalyticsService) OverTime(ctx context.Context, code, interval string) (any, error) {
 	since := sinceForInterval(interval)
 
 	switch interval {
 	case "hour":
 		return s.repo.ClicksOverTimeHourly(ctx, code, since)
-	default: // "day" or anything else → daily
+	default:
 		return s.repo.ClicksOverTimeDaily(ctx, code, since)
 	}
 }
@@ -53,11 +66,11 @@ func (s *AnalyticsService) OverTime(ctx context.Context, code, interval string) 
 func sinceForInterval(interval string) time.Time {
 	switch interval {
 	case "hour":
-		return time.Now().UTC().Add(-24 * time.Hour) // last 24 hours, hourly
+		return time.Now().UTC().Add(-24 * time.Hour)
 	case "week":
-		return time.Now().UTC().Add(-7 * 24 * time.Hour) // last 7 days, daily
-	default: // "day"
-		return time.Now().UTC().Add(-30 * 24 * time.Hour) // last 30 days, daily
+		return time.Now().UTC().Add(-7 * 24 * time.Hour)
+	default:
+		return time.Now().UTC().Add(-30 * 24 * time.Hour)
 	}
 }
 

@@ -67,7 +67,7 @@ func (h *UrlHandler) ShortenURL(c *gin.Context) {
 		expiry = *req.ExpiryMinutes
 	}
 
-	code, err := h.service.CreateShortURL(userId, req.OriginalURL, expiry, req.CustomCode)
+	code, err := h.service.CreateShortURL(c.Request.Context(), userId, req.OriginalURL, expiry, req.CustomCode)
 	if err != nil {
 		h.logger.Error("failed to create short url", zap.Error(err))
 
@@ -106,7 +106,7 @@ func (h *UrlHandler) ListURLS(c *gin.Context) {
 
 	userId := c.GetString("userID")
 
-	urls, err := h.service.ListURLS(userId)
+	urls, err := h.service.ListURLS(c.Request.Context(), userId)
 	if err != nil {
 		h.logger.Error("unable to process request",
 			zap.Error(err),
@@ -165,7 +165,7 @@ func (h *UrlHandler) UpdateURL(c *gin.Context) {
 
 	shortCode := c.Param("shortCode")
 
-	updatedCode, err := h.service.UpdateURL(userId, req.OriginalURL, shortCode, req.CustomCode, req.ExpiryMinutes)
+	updatedCode, err := h.service.UpdateURL(c.Request.Context(), userId, req.OriginalURL, shortCode, req.CustomCode, req.ExpiryMinutes)
 	if err != nil {
 		h.logger.Error("failed to update url", zap.Error(err))
 
@@ -223,7 +223,7 @@ func (h *UrlHandler) DeleteURL(c *gin.Context) {
 		return
 	}
 
-	err := h.service.DeleteURL(userId, code)
+	err := h.service.DeleteURL(c.Request.Context(), userId, code)
 	if err != nil {
 		h.logger.Error("failed to delete url",
 			zap.Error(err),
@@ -233,8 +233,8 @@ func (h *UrlHandler) DeleteURL(c *gin.Context) {
 		    c.JSON(http.StatusNotFound, gin.H{
 		        "error": "url not found",
 		    })
-		    return
-    	}
+			return
+		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error" : "internal server error",

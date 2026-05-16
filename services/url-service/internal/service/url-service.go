@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/cache"
@@ -8,7 +9,6 @@ import (
 	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/repository"
 	"github.com/ruthwikkakumani/redirection-engine/services/url-service/internal/utils"
 	"go.uber.org/zap"
-	"context"
 )
 
 type UrlService struct {
@@ -25,7 +25,7 @@ func NewUrlService(logger *zap.Logger, repo *repository.UrlRepo, cache *cache.Re
 	}
 }
 
-func (s *UrlService) CreateShortURL(userId string, url string, expiryMinutes int, customCode *string) (string, error) {
+func (s *UrlService) CreateShortURL(ctx context.Context, userId string, url string, expiryMinutes int, customCode *string) (string, error) {
 	var code string
 	var err error
 
@@ -34,7 +34,7 @@ func (s *UrlService) CreateShortURL(userId string, url string, expiryMinutes int
 		if !utils.IsValidShortCode(code) {
 			return "", utils.NewError("invalid short code format")
 		}
-		exists, err := s.repo.ShortCodeExists(code)
+		exists, err := s.repo.ShortCodeExists(ctx, code)
 		if err != nil {
 			return "", err
 		}
@@ -42,7 +42,7 @@ func (s *UrlService) CreateShortURL(userId string, url string, expiryMinutes int
 			return "", utils.NewError("short code already in use")
 		}
 	} else {
-		code, err = s.generateUniqueShortCode()
+		code, err = s.generateUniqueShortCode(ctx)
 		if err != nil {
 			s.logger.Error("unable to generate short code",
 				zap.Error(err),
@@ -57,18 +57,15 @@ func (s *UrlService) CreateShortURL(userId string, url string, expiryMinutes int
 		expiresAt = &t
 	}
 
-	if err := s.repo.CreateURL(userId, url, code, expiresAt); err != nil {
-		s.logger.Error("unable to store data in db",
-			zap.Error(err),
-		)
-
+	if err := s.repo.CreateURL(ctx, userId, url, code, expiresAt); err != nil {
+		s.logger.Error("unable to store data in db", zap.Error(err))
 		return "", err
 	}
 
 	return code, nil
 }
 
-func (s *UrlService) generateUniqueShortCode() (string, error) {
+func (s *UrlService) generateUniqueShortCode(ctx context.Context) (string, error) {
 	const length = 6
 
 	for {
@@ -77,7 +74,7 @@ func (s *UrlService) generateUniqueShortCode() (string, error) {
 			return "", err
 		}
 
-		exists, err := s.repo.ShortCodeExists(code)
+		exists, err := s.repo.ShortCodeExists(ctx, code)
 		if err != nil {
 			return "", err
 		}
@@ -88,9 +85,8 @@ func (s *UrlService) generateUniqueShortCode() (string, error) {
 	}
 }
 
-func (s *UrlService) ListURLS(userId string) ([]model.Url, error) {
-
-	urls, err := s.repo.ListURLS(userId)
+func (s *UrlService) ListURLS(ctx context.Context, userId string) ([]model.Url, error) {
+	urls, err := s.repo.ListURLS(ctx, userId)
 	if err != nil {
 		s.logger.Error("unable to get data from db",
 			zap.Error(err),
@@ -98,18 +94,16 @@ func (s *UrlService) ListURLS(userId string) ([]model.Url, error) {
 
 		return nil, err
 	}
-
 	return urls, nil
 }
 
-func (s *UrlService) UpdateURL(userId string, originalURL *string, code string, newCode *string, expiryMinutes *int) (string, error) {
-
+func (s *UrlService) UpdateURL(ctx context.Context, userId string, originalURL *string, code string, newCode *string, expiryMinutes *int) (string, error) {
 	var finalCode = code
 	if newCode != nil && *newCode != "" && *newCode != code {
 		if !utils.IsValidShortCode(*newCode) {
 			return "", utils.NewError("invalid short code format")
 		}
-		exists, err := s.repo.ShortCodeExists(*newCode)
+		exists, err := s.repo.ShortCodeExists(ctx, *newCode)
 		if err != nil {
 			return "", err
 		}
@@ -125,42 +119,33 @@ func (s *UrlService) UpdateURL(userId string, originalURL *string, code string, 
 		expiresAt = &t
 	}
 
-	if err := s.repo.UpdateURL(userId, originalURL, code, newCode, expiresAt); err != nil {
-		s.logger.Error("unable to update data in db",
-			zap.Error(err),
-		)
-
+	if err := s.repo.UpdateURL(ctx, userId, originalURL, code, newCode, expiresAt); err != nil {
+		s.logger.Error("unable to update data in db", zap.Error(err))
 		return "", err
 	}
 
-	// Invalidate cache
 	if client, err := s.cache.GetClient(); err == nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		cacheCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		client.Del(ctx, "url:"+code)
+		client.Del(cacheCtx, "url:"+code)
 		if finalCode != code {
-			client.Del(ctx, "url:"+finalCode)
+			client.Del(cacheCtx, "url:"+finalCode)
 		}
 	}
 
 	return finalCode, nil
 }
 
-func (s *UrlService) DeleteURL(userId string, shortCode string) error {
-
-	if err := s.repo.DeleteURL(userId, shortCode); err != nil {
-		s.logger.Error("unable to delete data in db",
-			zap.Error(err),
-		)
-
+func (s *UrlService) DeleteURL(ctx context.Context, userId string, shortCode string) error {
+	if err := s.repo.DeleteURL(ctx, userId, shortCode); err != nil {
+		s.logger.Error("unable to delete data in db", zap.Error(err))
 		return err
 	}
 
-	// Invalidate cache
 	if client, err := s.cache.GetClient(); err == nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		cacheCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		client.Del(ctx, "url:"+shortCode)
+		client.Del(cacheCtx, "url:"+shortCode)
 		s.logger.Info("invalidated cache for deleted url", zap.String("code", shortCode))
 	}
 

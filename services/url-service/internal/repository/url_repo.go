@@ -14,46 +14,42 @@ import (
 
 type UrlRepo struct {
 	logger *zap.Logger
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
 }
 
-func NewUrlRepo(logger *zap.Logger, db *pgxpool.Pool) (*UrlRepo){
+func NewUrlRepo(logger *zap.Logger, db *pgxpool.Pool) *UrlRepo {
 	return &UrlRepo{
 		logger: logger,
-		db: db,
+		db:     db,
 	}
 }
 
-func (r *UrlRepo) ShortCodeExists(code string) (bool, error) {
+func (r *UrlRepo) ShortCodeExists(ctx context.Context, code string) (bool, error) {
 	var exists bool
-	
 	query := `SELECT EXISTS(SELECT 1 FROM urls WHERE short_code=$1)`
-	err := r.db.QueryRow(context.Background(), query, code).Scan(&exists)
-	
+	err := r.db.QueryRow(ctx, query, code).Scan(&exists)
 	return exists, err
 }
 
-func (r *UrlRepo) CreateURL(userID, originalURL, code string, expiresAt *time.Time) (error) {
+func (r *UrlRepo) CreateURL(ctx context.Context, userID, originalURL, code string, expiresAt *time.Time) error {
 	query := `
 		INSERT INTO urls (user_id, original_url, short_code, expires_at)
 		VALUES ($1, $2, $3, $4)
 	`
-
-	_, err := r.db.Exec(context.Background(), query, userID, originalURL, code, expiresAt)
+	_, err := r.db.Exec(ctx, query, userID, originalURL, code, expiresAt)
 	return err
 }
 
-func (r *UrlRepo) ListURLS(userID string) ([]model.Url, error) {
-
+func (r *UrlRepo) ListURLS(ctx context.Context, userID string) ([]model.Url, error) {
 	query := `
-		SELECT short_code, original_url, created_at, expires_at  FROM urls
+		SELECT short_code, original_url, created_at, expires_at FROM urls
 		WHERE user_id = $1
 		ORDER BY created_at DESC
-	` 
+	`
 
 	var urls []model.Url
-	
-	rows, err := r.db.Query(context.Background(), query, userID)
+
+	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
 		return urls, err
 	}
@@ -83,8 +79,7 @@ func (r *UrlRepo) ListURLS(userID string) ([]model.Url, error) {
 	return urls, nil
 }
 
-func (r *UrlRepo) UpdateURL(userID string, originalURL *string, code string, newCode *string, expiresAt *time.Time) (error) {
-
+func (r *UrlRepo) UpdateURL(ctx context.Context, userID string, originalURL *string, code string, newCode *string, expiresAt *time.Time) error {
 	setClauses := []string{}
 	args := []interface{}{}
 	argPos := 1
@@ -94,7 +89,6 @@ func (r *UrlRepo) UpdateURL(userID string, originalURL *string, code string, new
 			setClauses,
 			fmt.Sprintf("original_url = $%d", argPos),
 		)
-
 		args = append(args, *originalURL)
 		argPos++
 	}
@@ -104,7 +98,6 @@ func (r *UrlRepo) UpdateURL(userID string, originalURL *string, code string, new
 			setClauses,
 			fmt.Sprintf("short_code = $%d", argPos),
 		)
-
 		args = append(args, *newCode)
 		argPos++
 	}
@@ -114,7 +107,6 @@ func (r *UrlRepo) UpdateURL(userID string, originalURL *string, code string, new
 			setClauses,
 			fmt.Sprintf("expires_at = $%d", argPos),
 		)
-
 		args = append(args, *expiresAt)
 		argPos++
 	}
@@ -122,7 +114,7 @@ func (r *UrlRepo) UpdateURL(userID string, originalURL *string, code string, new
 	if len(setClauses) == 0 {
 		return errors.New("no fields to update")
 	}
-	
+
 	query := fmt.Sprintf(`
 		UPDATE urls
 		SET %s
@@ -137,11 +129,10 @@ func (r *UrlRepo) UpdateURL(userID string, originalURL *string, code string, new
 	args = append(args, userID, code)
 
 	result, err := r.db.Exec(
-		context.Background(),
-		query,
-		args...,
+		ctx, 
+		query, 
+		args...
 	)
-
 	if err != nil {
 		return err
 	}
@@ -153,14 +144,14 @@ func (r *UrlRepo) UpdateURL(userID string, originalURL *string, code string, new
 	return nil
 }
 
-func (r *UrlRepo) DeleteURL(userID string, shortCode string) (error) {
+func (r *UrlRepo) DeleteURL(ctx context.Context, userID string, shortCode string) error {
 	query := `
 		DELETE FROM urls
 		WHERE user_id = $1
-	  	AND short_code = $2;
+  		AND short_code = $2;
 	`
 
-	result, err := r.db.Exec(context.Background(), query, userID, shortCode)
+	result, err := r.db.Exec(ctx, query, userID, shortCode)
 	if err != nil {
 		return err
 	}

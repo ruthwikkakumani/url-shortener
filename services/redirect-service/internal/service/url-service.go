@@ -13,15 +13,15 @@ import (
 
 type UrlService struct {
 	logger *zap.Logger
-	repo *repository.UrlRepo
+	repo   *repository.UrlRepo
 	cache  *cache.RedisClient
 }
 
-func NewUrlService(logger *zap.Logger, repo *repository.UrlRepo, cache *cache.RedisClient) (*UrlService) {
+func NewUrlService(logger *zap.Logger, repo *repository.UrlRepo, cache *cache.RedisClient) *UrlService {
 	return &UrlService{
 		logger: logger,
-		repo: repo,
-		cache: cache,
+		repo:   repo,
+		cache:  cache,
 	}
 }
 
@@ -49,7 +49,7 @@ func (s *UrlService) GetOriginalURL(ctx context.Context, code string) (string, e
 	        zap.String("code", code),
 	        zap.Error(err),
 	    )
-    }
+	}
 
 
 	url, err := s.repo.GetOriginalURL(code)
@@ -61,13 +61,14 @@ func (s *UrlService) GetOriginalURL(ctx context.Context, code string) (string, e
 		return "", err
 	}
 
-	ttl := 10 * time.Minute + time.Duration(rand.Intn(60))*time.Second
-	err = client.Set(ctx, key, url, ttl).Err()
-	if err != nil {
-		s.logger.Warn("Failed to set cache", 
-			zap.Error(err),
-		)
-	}
-	
+	go func() {
+		warmCtx, warmCancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer warmCancel()
+		ttl := 10*time.Minute + time.Duration(rand.Intn(60))*time.Second
+		if err := client.Set(warmCtx, key, url, ttl).Err(); err != nil {
+			s.logger.Warn("Failed to set cache", zap.Error(err))
+		}
+	}()
+
 	return url, nil
 }
